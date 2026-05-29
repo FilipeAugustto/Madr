@@ -46,3 +46,22 @@ def user(session):
     user.clean_password = 'test'
 
     return user
+
+
+@pytest.fixture
+def other_user(session):
+    password = 'test'
+    user = UserFactory(password=get_password_hash(password))
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    user.clean_password = 'test'
+
+    return user
+
+
+@pytest.fixture
+def token(client, user):
+    ...

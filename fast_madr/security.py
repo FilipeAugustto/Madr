@@ -19,7 +19,7 @@ settings = get_settings()
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl='auth/token', refreshUrl='/auth/token-refresh'
-    )
+)
 
 
 def get_password_hash(plain_password: str):
@@ -35,7 +35,7 @@ def create_access_token(data: dict):
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    to_encode.update({"exp": expire})
+    to_encode.update({'exp': expire})
     encoded_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
@@ -43,13 +43,13 @@ def create_access_token(data: dict):
 
 
 def get_current_user(
-        session: Annotated[Session, Depends(get_session)],
-        token: Annotated[str, Depends(oauth2_scheme)]
+    session: Annotated[Session, Depends(get_session)],
+    token: Annotated[str, Depends(oauth2_scheme)],
 ):
     credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
     )
     try:
         payload = jwt.decode(
