@@ -25,7 +25,7 @@ def create_user(user: UserSchema, session: O_Session):
     )
     if db_user:
         raise HTTPException(
-            HTTPStatus.CONFLICT, detail=('Username or email already exists!')
+            HTTPStatus.CONFLICT, detail='Username or email already exists!'
         )
 
     db_user = User(
@@ -56,7 +56,7 @@ def update_user(
     current_user.password = get_password_hash(user.password)
 
     try:
-        session.delete(current_user)
+        session.add(current_user)
         session.commit()
     except IntegrityError:
         raise HTTPException(
@@ -67,11 +67,7 @@ def update_user(
 
 
 @router.delete('/{user_id}', response_model=Message, status_code=HTTPStatus.OK)
-def delete_user(
-    user_id: int,
-    current_user: CurrentUser,
-    session: O_Session
-):
+def delete_user(user_id: int, current_user: CurrentUser, session: O_Session):
     if user_id != current_user.id:
         raise HTTPException(HTTPStatus.FORBIDDEN, detail='Unauthorized user!')
 

@@ -2,12 +2,12 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from testcontainers.postgres import PostgresContainer
 
 from fast_madr.app import app
 from fast_madr.database import get_session
 from fast_madr.models import table_registry
 from fast_madr.security import get_password_hash
-from fast_madr.settings import get_settings
 from tests.factories import UserFactory
 
 
@@ -23,13 +23,22 @@ def client(session):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(scope='session')
+def engine():
+    with PostgresContainer('postgres:17-alpine', driver='psycopg') as postgres:
+        _engine = create_engine(postgres.get_connection_url())
+
+        with _engine.begin():
+            yield _engine
+
+
 @pytest.fixture
-def session():
-    engine = create_engine(get_settings().DATABASE_URL)
+def session(engine):
     table_registry.metadata.create_all(engine)
 
     with Session(engine) as session:
         yield session
+        session.rollback()
 
     table_registry.metadata.drop_all(engine)
 
@@ -64,4 +73,9 @@ def other_user(session):
 
 @pytest.fixture
 def token(client, user):
-    ...
+    response = client.post(
+        '/auth/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+
+    return response.json()['access_token']
