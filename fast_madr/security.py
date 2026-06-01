@@ -18,7 +18,7 @@ from fast_madr.settings import get_settings
 settings = get_settings()
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl='auth/token', refreshUrl='/auth/token-refresh'
+    tokenUrl='auth/token', refreshUrl='/auth/refresh-token'
 )
 
 

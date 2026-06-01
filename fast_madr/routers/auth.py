@@ -24,7 +24,8 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 @router.post('/token', response_model=Token, status_code=HTTPStatus.OK)
 def login_for_access_token(session: O_Session, form_data: Formdata):
-    user = session.scalar(select(User).where(
+    user = session.scalar(
+        select(User).where(
             (User.email == form_data.username) & (User.is_active)
         )
     )
@@ -40,7 +41,7 @@ def login_for_access_token(session: O_Session, form_data: Formdata):
     return Token(access_token=access_token, token_type='Bearer')
 
 
-@router.post('/token-refresh', response_model=Token, status_code=HTTPStatus.OK)
+@router.post('/refresh-token', response_model=Token, status_code=HTTPStatus.OK)
 def refresh_token(current_user: CurrentUser):
     new_access_token = create_access_token({'sub': current_user.email})
 
