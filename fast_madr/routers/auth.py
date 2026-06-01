@@ -24,7 +24,10 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 @router.post('/token', response_model=Token, status_code=HTTPStatus.OK)
 def login_for_access_token(session: O_Session, form_data: Formdata):
-    user = session.scalar(select(User).where(User.email == form_data.username))
+    user = session.scalar(select(User).where(
+            (User.email == form_data.username) & (User.is_active)
+        )
+    )
 
     if not user or not verify_password_hash(form_data.password, user.password):
         raise HTTPException(
