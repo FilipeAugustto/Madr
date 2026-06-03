@@ -16,7 +16,7 @@ O_Session = Annotated[Session, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-@router.post('/', response_model=UserPublic, status_code=HTTPStatus.CREATED)
+@router.post('', response_model=UserPublic, status_code=HTTPStatus.CREATED)
 def create_user(user: UserSchema, session: O_Session):
     db_user = session.scalar(
         select(User).where(

@@ -1,10 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import func
-from sqlalchemy.orm import Mapped, mapped_as_dataclass, mapped_column, registry
+from sqlalchemy import Column, Table, func, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_as_dataclass, mapped_column, registry, relationship
 
 table_registry = registry()
-
+user_book_association = Table(
+    'user_book',
+    table_registry.metadata,
+    Column('user_id', ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('book_id', ForeignKey('books.id', ondelete='CASCADE'), primary_key=True)
+)
 
 @mapped_as_dataclass(table_registry)
 class User:
@@ -21,3 +26,33 @@ class User:
         init=False, server_default=func.now(), onupdate=func.now()
     )
     is_active: Mapped[bool] = mapped_column(default=True)
+    books: Mapped[list['Book']] = relationship(
+        secondary=user_book_association, init=False,
+        back_populates='users', passive_deletes=True
+    )
+
+
+@mapped_as_dataclass(table_registry)
+class Book:
+    __tablename__ = 'books'
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    year: Mapped[int]
+    title: Mapped[str] = mapped_column(unique=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey('authors.id'))
+    author: Mapped['Author'] = relationship(init=False, back_populates='books')
+    users: Mapped[list[User]] = relationship(
+        secondary=user_book_association, init=False,
+        back_populates='books', passive_deletes=True
+    )
+
+
+@mapped_as_dataclass(table_registry)
+class Author:
+    __tablename__ = 'authors'
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    name: Mapped[str] = mapped_column(unique=True)
+    books: Mapped[list['Book']] = relationship(
+        init=False, back_populates='author', cascade='all, delete-orphan'
+    )

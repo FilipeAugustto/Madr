@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 def test_create_user(client):
     response = client.post(
-        '/users/',
+        '/users',
         json={
             'username': 'usertest',
             'email': 'usertest@example.com',
@@ -25,7 +25,7 @@ def test_create_user_should_return_409(client, user):
         'email': user.email,
         'password': user.clean_password,
     }
-    response = client.post('/users/', json=user_schema)
+    response = client.post('/users', json=user_schema)
 
     assert response.status_code == HTTPStatus.CONFLICT
     assert response.json() == {'detail': 'Username or email already exists!'}

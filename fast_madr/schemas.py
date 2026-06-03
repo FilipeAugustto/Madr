@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class Message(BaseModel):
@@ -24,3 +24,9 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+
+
+class BookSchema(BaseModel):
+    year: int
+    title: str
+    author_id: int
