@@ -74,3 +74,14 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def get_admin_user(
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    if not current_user.is_admin:
+        raise HTTPException(
+            HTTPStatus.FORBIDDEN, detail='Action restricted to administrators!'
+        )
+
+    return current_user

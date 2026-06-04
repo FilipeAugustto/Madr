@@ -1,4 +1,8 @@
-from pydantic import BaseModel, EmailStr, Field
+from typing import Annotated
+
+from pydantic import AfterValidator, BaseModel, EmailStr, Field
+
+from fast_madr.utils import check_future_year, sanitize_text
 
 
 class Message(BaseModel):
@@ -27,6 +31,32 @@ class TokenData(BaseModel):
 
 
 class BookSchema(BaseModel):
-    year: int
-    title: str
+    year: Annotated[int, Field(ge=0), AfterValidator(check_future_year)]
+    title: Annotated[str, AfterValidator(sanitize_text)]
     author_id: int
+
+
+class BookPublic(BookSchema):
+    id: int
+
+
+class BookUpdate(BaseModel):
+    year: (
+        Annotated[int, Field(ge=0), AfterValidator(check_future_year)] | None
+    ) = None
+    title: Annotated[str, AfterValidator(sanitize_text)] | None = None
+    author_id: int | None = None
+
+
+class FilterBook(BaseModel):
+    limit: int = Field(ge=0, default=20)
+    year: (
+        Annotated[int, Field(ge=0), AfterValidator(check_future_year)] | None
+    ) = None
+    title: Annotated[str, AfterValidator(sanitize_text)] | None = Field(
+        min_length=3, default=None
+    )
+
+
+class ListBooks(BaseModel):
+    books: list[BookPublic]

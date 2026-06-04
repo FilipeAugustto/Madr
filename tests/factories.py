@@ -11,3 +11,4 @@ class UserFactory(factory.Factory):
     email = factory.LazyAttribute(lambda obj: f'{obj.username}@example.com')
     password = factory.LazyAttribute(lambda obj: f'{obj.username}@test.com')
     is_active = True
+    is_admin = False

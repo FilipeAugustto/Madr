@@ -58,6 +58,7 @@ def update_user(
     try:
         session.add(current_user)
         session.commit()
+
     except IntegrityError:
         raise HTTPException(
             HTTPStatus.CONFLICT, detail='Username or email already exists!'

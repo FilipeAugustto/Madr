@@ -1,15 +1,26 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Table, func, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_as_dataclass, mapped_column, registry, relationship
+from sqlalchemy import Column, ForeignKey, Table, func
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_as_dataclass,
+    mapped_column,
+    registry,
+    relationship,
+)
 
 table_registry = registry()
 user_book_association = Table(
     'user_book',
     table_registry.metadata,
-    Column('user_id', ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
-    Column('book_id', ForeignKey('books.id', ondelete='CASCADE'), primary_key=True)
+    Column(
+        'user_id', ForeignKey('users.id', ondelete='CASCADE'), primary_key=True
+    ),
+    Column(
+        'book_id', ForeignKey('books.id', ondelete='CASCADE'), primary_key=True
+    ),
 )
+
 
 @mapped_as_dataclass(table_registry)
 class User:
@@ -26,9 +37,12 @@ class User:
         init=False, server_default=func.now(), onupdate=func.now()
     )
     is_active: Mapped[bool] = mapped_column(default=True)
+    is_admin: Mapped[bool] = mapped_column(default=False)
     books: Mapped[list['Book']] = relationship(
-        secondary=user_book_association, init=False,
-        back_populates='users', passive_deletes=True
+        secondary=user_book_association,
+        init=False,
+        back_populates='users',
+        passive_deletes=True,
     )
 
 
@@ -42,8 +56,10 @@ class Book:
     author_id: Mapped[int] = mapped_column(ForeignKey('authors.id'))
     author: Mapped['Author'] = relationship(init=False, back_populates='books')
     users: Mapped[list[User]] = relationship(
-        secondary=user_book_association, init=False,
-        back_populates='books', passive_deletes=True
+        secondary=user_book_association,
+        init=False,
+        back_populates='books',
+        passive_deletes=True,
     )
 
 
