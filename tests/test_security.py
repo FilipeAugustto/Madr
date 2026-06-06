@@ -51,3 +51,23 @@ def test_get_current_user_dont_exists(client):
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
     assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_get_admin_user(client, token_admin, book_with_author):
+    response = client.delete(
+        f'/books/{book_with_author.id}',
+        headers={'Authorization': f'Bearer {token_admin}'}
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {'message': 'Book deleted'}
+
+
+def test_get_admin_user_with_common_user(client, token, book_with_author):
+    response = client.delete(
+        f'/books/{book_with_author.id}',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Action restricted to administrators'}

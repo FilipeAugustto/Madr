@@ -22,7 +22,7 @@ def test_login_for_access_token_with_inexistent_user(client):
     )
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert response.json() == {'detail': 'Incorrect email or password!'}
+    assert response.json() == {'detail': 'Incorrect email or password'}
 
 
 def test_login_for_access_token_with_wrong_password(client, user):
@@ -32,7 +32,20 @@ def test_login_for_access_token_with_wrong_password(client, user):
     )
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert response.json() == {'detail': 'Incorrect email or password!'}
+    assert response.json() == {'detail': 'Incorrect email or password'}
+
+
+def test_login_for_access_token_with_inactive_user(client, inactive_user):
+    response = client.post(
+        '/auth/token',
+        data={
+            'username': inactive_user.email,
+            'password': inactive_user.clean_password,
+        },
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Incorrect email or password'}
 
 
 def test_refresh_token(client, token):
@@ -49,6 +62,19 @@ def test_refresh_token(client, token):
 def test_refresh_token_with_wrong_token(client, token):
     response = client.post(
         '/auth/refresh-token', headers={'Authorization': 'Bearer wrong_token'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_refresh_token_after_inactivating_user(client, user, token):
+    client.delete(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    response = client.post(
+        '/auth/refresh-token', headers={'Authorization': f'Bearer {token}'}
     )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED

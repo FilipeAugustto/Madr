@@ -28,7 +28,7 @@ def test_create_user_should_return_409(client, user):
     response = client.post('/users', json=user_schema)
 
     assert response.status_code == HTTPStatus.CONFLICT
-    assert response.json() == {'detail': 'Username or email already exists!'}
+    assert response.json() == {'detail': 'Username or email already exists'}
 
 
 def test_update_user(client, user, token):
@@ -64,7 +64,7 @@ def test_update_user_should_return_403(client, user, token):
     )
 
     assert response.status_code == HTTPStatus.FORBIDDEN
-    assert response.json() == {'detail': 'Unauthorized user!'}
+    assert response.json() == {'detail': 'Unauthorized user'}
 
 
 def test_update_user_should_return_409(client, user, other_user, token):
@@ -80,7 +80,7 @@ def test_update_user_should_return_409(client, user, other_user, token):
     )
 
     assert response.status_code == HTTPStatus.CONFLICT
-    assert response.json() == {'detail': 'Username or email already exists!'}
+    assert response.json() == {'detail': 'Username or email already exists'}
 
 
 def test_delete_user(client, user, token):
@@ -89,7 +89,7 @@ def test_delete_user(client, user, token):
     )
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'message': 'User deleted successfully!'}
+    assert response.json() == {'message': 'User deleted successfully'}
 
 
 def test_delete_user_should_return_403(client, user, token):
@@ -98,4 +98,4 @@ def test_delete_user_should_return_403(client, user, token):
     )
 
     assert response.status_code == HTTPStatus.FORBIDDEN
-    assert response.json() == {'detail': 'Unauthorized user!'}
+    assert response.json() == {'detail': 'Unauthorized user'}

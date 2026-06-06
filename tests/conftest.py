@@ -11,7 +11,7 @@ from fast_madr.app import app
 from fast_madr.database import get_session
 from fast_madr.models import table_registry
 from fast_madr.security import get_password_hash
-from tests.factories import UserFactory
+from tests.factories import AuthorFactory, BookFactory, UserFactory
 
 
 @pytest.fixture
@@ -82,6 +82,38 @@ def user(session):
 
 
 @pytest.fixture
+def admin_user(session):
+    password = 'test'
+    admin_user = UserFactory(
+        password=get_password_hash(password), is_admin=True
+    )
+
+    session.add(admin_user)
+    session.commit()
+    session.refresh(admin_user)
+
+    admin_user.clean_password = 'test'
+
+    return admin_user
+
+
+@pytest.fixture
+def inactive_user(session):
+    password = 'test'
+    inactive_user = UserFactory(
+        password=get_password_hash(password), is_active=False
+    )
+
+    session.add(inactive_user)
+    session.commit()
+    session.refresh(inactive_user)
+
+    inactive_user.clean_password = 'test'
+
+    return inactive_user
+
+
+@pytest.fixture
 def other_user(session):
     password = 'test'
     user = UserFactory(password=get_password_hash(password))
@@ -96,10 +128,44 @@ def other_user(session):
 
 
 @pytest.fixture
+def author(session):
+    AuthorFactory._meta.sqlalchemy_session = session
+
+    author = AuthorFactory()
+    session.refresh(author)
+
+    return author
+
+
+@pytest.fixture
+def book_with_author(session):
+    AuthorFactory._meta.sqlalchemy_session = session
+    BookFactory._meta.sqlalchemy_session = session
+
+    book = BookFactory()
+    session.refresh(book)
+
+    return book
+
+
+@pytest.fixture
 def token(client, user):
     response = client.post(
         '/auth/token',
         data={'username': user.email, 'password': user.clean_password},
+    )
+
+    return response.json()['access_token']
+
+
+@pytest.fixture
+def token_admin(client, admin_user):
+    response = client.post(
+        '/auth/token',
+        data={
+            'username': admin_user.email,
+            'password': admin_user.clean_password,
+        },
     )
 
     return response.json()['access_token']
