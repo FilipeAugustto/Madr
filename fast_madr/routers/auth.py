@@ -32,7 +32,7 @@ def login_for_access_token(session: O_Session, form_data: Formdata):
 
     if not user or not verify_password_hash(form_data.password, user.password):
         raise HTTPException(
-            HTTPStatus.BAD_REQUEST, detail='Incorrect email or password!'
+            HTTPStatus.BAD_REQUEST, detail='Incorrect email or password'
         )
 
     data = {'sub': user.email}

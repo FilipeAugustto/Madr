@@ -31,7 +31,7 @@ def create_book(
     db_book = session.scalar(select(Book).where(Book.title == book.title))
     if db_book:
         raise HTTPException(
-            HTTPStatus.CONFLICT, detail='Book already exists in the database!'
+            HTTPStatus.CONFLICT, detail='Book already exists in the database'
         )
 
     try:
@@ -46,7 +46,7 @@ def create_book(
     except IntegrityError:
         raise HTTPException(
             HTTPStatus.BAD_REQUEST,
-            detail='Author does not exists in the database!',
+            detail='Author does not exists in the database',
         )
 
     return db_book
@@ -57,12 +57,12 @@ def delete_book(book_id: int, admin_user: AdminUser, session: O_Session):
     db_book = session.scalar(select(Book).where(Book.id == book_id))
 
     if not db_book:
-        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Book not found!')
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Book not found')
 
     session.delete(db_book)
     session.commit()
 
-    return {'message': 'Book deleted!'}
+    return {'message': 'Book deleted'}
 
 
 @router.patch(
@@ -74,7 +74,7 @@ def patch_book(
     db_book = session.scalar(select(Book).where(Book.id == book_id))
 
     if not db_book:
-        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Book not found!')
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Book not found')
 
     for key, value in book.model_dump(exclude_unset=True).items():
         setattr(db_book, key, value)

@@ -25,7 +25,7 @@ def create_user(user: UserSchema, session: O_Session):
     )
     if db_user:
         raise HTTPException(
-            HTTPStatus.CONFLICT, detail='Username or email already exists!'
+            HTTPStatus.CONFLICT, detail='Username or email already exists'
         )
 
     db_user = User(
@@ -49,7 +49,7 @@ def update_user(
     session: O_Session,
 ):
     if user_id != current_user.id:
-        raise HTTPException(HTTPStatus.FORBIDDEN, detail='Unauthorized user!')
+        raise HTTPException(HTTPStatus.FORBIDDEN, detail='Unauthorized user')
 
     current_user.username = user.username
     current_user.email = user.email
@@ -61,7 +61,7 @@ def update_user(
 
     except IntegrityError:
         raise HTTPException(
-            HTTPStatus.CONFLICT, detail='Username or email already exists!'
+            HTTPStatus.CONFLICT, detail='Username or email already exists'
         )
 
     return current_user
@@ -70,7 +70,7 @@ def update_user(
 @router.delete('/{user_id}', response_model=Message, status_code=HTTPStatus.OK)
 def delete_user(user_id: int, current_user: CurrentUser, session: O_Session):
     if user_id != current_user.id:
-        raise HTTPException(HTTPStatus.FORBIDDEN, detail='Unauthorized user!')
+        raise HTTPException(HTTPStatus.FORBIDDEN, detail='Unauthorized user')
 
     user = session.scalar(select(User).where(User.id == current_user.id))
 
@@ -79,4 +79,4 @@ def delete_user(user_id: int, current_user: CurrentUser, session: O_Session):
     session.add(user)
     session.commit()
 
-    return {'message': 'User deleted successfully!'}
+    return {'message': 'User deleted successfully'}
