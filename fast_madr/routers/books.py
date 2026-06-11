@@ -104,7 +104,7 @@ def list_books(
 ):
     query = select(Book)
 
-    if book_filter.title:
+    if book_filter.year:
         query.filter(Book.year >= book_filter.year)
 
     if book_filter.title:
