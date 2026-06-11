@@ -69,7 +69,7 @@ def delete_book(book_id: int, admin_user: AdminUser, session: O_Session):
     '/{book_id}', status_code=HTTPStatus.OK, response_model=BookPublic
 )
 def patch_book(
-    book_id: int, book: BookUpdate, admin_user: AdminUser, session: O_Session
+    book_id: int, book: BookUpdate, current_user: CurrentUser, session: O_Session
 ):
     db_book = session.scalar(select(Book).where(Book.id == book_id))
 
