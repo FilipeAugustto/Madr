@@ -105,11 +105,19 @@ def list_books(
     query = select(Book)
 
     if book_filter.year:
-        query.filter(Book.year >= book_filter.year)
+        query = query.filter(Book.year == book_filter.year)
+    
+    if book_filter.min_year:
+        query = query.filter(Book.year >= book_filter.min_year)
+    
+    if book_filter.max_year:
+        query = query.filter(Book.year <= book_filter.max_year)
 
     if book_filter.title:
-        query.filter(Book.title.contains(book_filter.title))
+        query = query.filter(Book.title.contains(book_filter.title))
 
-    books = session.scalars(query.limit(book_filter.limit))
+    books = session.scalars(
+        query.offset(book_filter.offset).limit(book_filter.limit)
+    )
 
     return {'books': books.all()}

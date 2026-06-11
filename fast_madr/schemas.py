@@ -48,7 +48,6 @@ class BookUpdate(BaseModel):
     author_id: int | None = None
 
 
-
 class FilterPage(BaseModel):
     limit: int = Field(ge=1, default=20)
     offset: int = Field(ge=0, default=0)
@@ -58,9 +57,16 @@ class FilterBook(FilterPage):
     year: (
         Annotated[int, Field(ge=0), AfterValidator(check_future_year)] | None
     ) = None
-    title: Annotated[str, AfterValidator(sanitize_text)] | None = Field(
-        min_length=3, default=None
-    )
+    min_year: (
+        Annotated[int, Field(ge=0), AfterValidator(check_future_year)] | None
+    ) = None
+    max_year: (
+        Annotated[int, Field(ge=0), AfterValidator(check_future_year)] | None
+    ) = None
+    title: (
+        Annotated[str, Field(min_length=3), AfterValidator(sanitize_text)]
+        | None
+    ) = None
 
 
 class ListBooks(BaseModel):
