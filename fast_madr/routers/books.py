@@ -45,7 +45,7 @@ def create_book(
 
     except IntegrityError:
         raise HTTPException(
-            HTTPStatus.BAD_REQUEST,
+            HTTPStatus.UNPROCESSABLE_ENTITY,
             detail='Author does not exists in the database',
         )
 
