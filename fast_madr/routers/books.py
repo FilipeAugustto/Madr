@@ -79,9 +79,16 @@ def patch_book(
     for key, value in book.model_dump(exclude_unset=True).items():
         setattr(db_book, key, value)
 
-    session.add(db_book)
-    session.commit()
-    session.refresh(db_book)
+    try:
+        session.add(db_book)
+        session.commit()
+        session.refresh(db_book)
+
+    except IntegrityError:
+        raise HTTPException(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail='Author does not exists in the database'
+        )
 
     return db_book
 
