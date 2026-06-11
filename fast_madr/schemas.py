@@ -48,8 +48,13 @@ class BookUpdate(BaseModel):
     author_id: int | None = None
 
 
-class FilterBook(BaseModel):
-    limit: int = Field(ge=0, default=20)
+
+class FilterPage(BaseModel):
+    limit: int = Field(ge=1, default=20)
+    offset: int = Field(ge=0, default=0)
+
+
+class FilterBook(FilterPage):
     year: (
         Annotated[int, Field(ge=0), AfterValidator(check_future_year)] | None
     ) = None
