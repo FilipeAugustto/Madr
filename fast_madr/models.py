@@ -68,7 +68,8 @@ class Author:
     __tablename__ = 'authors'
 
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
-    name: Mapped[str] = mapped_column(unique=True)
+    name: Mapped[str]
+    birth_year: Mapped[int]
     books: Mapped[list['Book']] = relationship(
         init=False, back_populates='author', cascade='all, delete-orphan'
     )
