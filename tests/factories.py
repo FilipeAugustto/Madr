@@ -1,6 +1,10 @@
 import factory
+from faker import Faker
 
 from fast_madr.models import Author, Book, User
+from fast_madr.utils import sanitize_text
+
+fake = Faker()
 
 
 class UserFactory(factory.Factory):
@@ -20,7 +24,8 @@ class AuthorFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = None
         sqlalchemy_session_persistence = 'commit'
 
-    name = factory.Faker('name')
+    name = factory.LazyAttribute(lambda x: sanitize_text(fake.name()))
+    birth_year = factory.Faker('random_int', min=1800, max=2005)
 
 
 class BookFactory(factory.alchemy.SQLAlchemyModelFactory):
