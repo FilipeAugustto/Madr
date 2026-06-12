@@ -106,10 +106,10 @@ def list_books(
 
     if book_filter.year:
         query = query.filter(Book.year == book_filter.year)
-    
+
     if book_filter.min_year:
         query = query.filter(Book.year >= book_filter.min_year)
-    
+
     if book_filter.max_year:
         query = query.filter(Book.year <= book_filter.max_year)
 

@@ -149,6 +149,12 @@ def book_with_author(session):
 
 
 @pytest.fixture
+def prepare_factories(session):
+    AuthorFactory._meta.sqlalchemy_session = session
+    BookFactory._meta.sqlalchemy_session = session
+
+
+@pytest.fixture
 def token(client, user):
     response = client.post(
         '/auth/token',
