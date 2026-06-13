@@ -2,7 +2,6 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, EmailStr, Field
 
-from fast_madr.models import Author
 from fast_madr.utils import check_future_year, sanitize_text
 
 
@@ -83,8 +82,19 @@ class AuthorPublic(AuthorSchema):
     id: int
 
 
+class AuthorUpdate(BaseModel):
+    name: Annotated[str, AfterValidator(sanitize_text)] | None = None
+    birth_year: (
+        Annotated[int, Field(ge=0), AfterValidator(check_future_year)] | None
+    ) = None
+
+
 class FilterAuthor(FilterPage):
     name: Annotated[str, AfterValidator(sanitize_text)] | None = None
     birth_year: (
         Annotated[int, Field(ge=0), AfterValidator(check_future_year)] | None
     ) = None
+
+
+class ListAuthors(BaseModel):
+    authors: list[AuthorPublic]
