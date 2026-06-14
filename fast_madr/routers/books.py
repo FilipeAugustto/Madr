@@ -62,7 +62,7 @@ def delete_book(book_id: int, admin_user: AdminUser, session: O_Session):
     session.delete(db_book)
     session.commit()
 
-    return {'message': 'Book deleted'}
+    return {'message': 'Book deleted successfully'}
 
 
 @router.patch(

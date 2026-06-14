@@ -60,7 +60,7 @@ def delete_author(author_id: int, admin_user: AdminUser, session: O_Session):
     session.delete(db_author)
     session.commit()
 
-    return {'message': 'Author deleted'}
+    return {'message': 'Author deleted successfully'}
 
 
 @router.patch(
