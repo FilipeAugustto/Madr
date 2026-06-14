@@ -7,8 +7,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from fast_madr.database import get_session
-from fast_madr.models import User
-from fast_madr.schemas import Message, UserPublic, UserSchema
+from fast_madr.models import Book, User
+from fast_madr.schemas import BookPublic, Message, UserPublic, UserSchema
 from fast_madr.security import get_current_user, get_password_hash
 
 router = APIRouter(prefix='/users', tags=['users'])
@@ -80,3 +80,51 @@ def delete_user(user_id: int, current_user: CurrentUser, session: O_Session):
     session.commit()
 
     return {'message': 'User deleted successfully'}
+
+
+@router.post(
+    '/me/books/{book_id}', response_model=BookPublic, status_code=HTTPStatus.OK
+)
+def add_book_to_user(
+    book_id: int, current_user: CurrentUser, session: O_Session
+):
+    db_book = session.scalar(select(Book).where(Book.id == book_id))
+
+    if not db_book:
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Book not found')
+
+    try:
+        current_user.books.append(db_book)
+
+        session.add(current_user)
+        session.commit()
+
+    except IntegrityError:
+        raise HTTPException(
+            HTTPStatus.CONFLICT, detail='User already has this book saved'
+        )
+
+    return db_book
+
+
+@router.delete(
+    '/me/books/{book_id}', response_model=Message, status_code=HTTPStatus.OK
+)
+def remove_book_from_user(
+    book_id: int, current_user: CurrentUser, session: O_Session
+):
+    user_saved_book = session.scalar(
+        select(Book)
+        .join(Book.users)
+        .where((User.id == current_user.id) & (Book.id == book_id))
+    )
+
+    if not user_saved_book:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND, detail='User does not have this book saved'
+        )
+
+    current_user.books.remove(user_saved_book)
+    session.commit()
+
+    return {'message': 'Book successfully removed from user collection'}

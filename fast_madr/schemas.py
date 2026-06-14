@@ -49,7 +49,7 @@ class BookUpdate(BaseModel):
 
 
 class FilterPage(BaseModel):
-    limit: int = Field(ge=1, default=20)
+    limit: int = Field(ge=1, default=20, le=100)
     offset: int = Field(ge=0, default=0)
 
 
