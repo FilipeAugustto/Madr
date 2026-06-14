@@ -99,3 +99,66 @@ def test_delete_user_should_return_403(client, user, token):
 
     assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {'detail': 'Unauthorized user'}
+
+
+def test_add_book_to_user(client, book_with_author, token):
+    response = client.post(
+        f'/users/me/books/{book_with_author.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'id': book_with_author.id,
+        'year': book_with_author.year,
+        'title': book_with_author.title,
+        'author_id': book_with_author.author_id,
+    }
+
+
+def test_add_book_to_user_should_return_404(client, book_with_author, token):
+    response = client.post(
+        f'/users/me/books/{book_with_author.id + 1}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'Book not found'}
+
+
+def test_add_book_to_user_should_return_409(client, book_with_author, token):
+    client.post(
+        f'/users/me/books/{book_with_author.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    response = client.post(
+        f'/users/me/books/{book_with_author.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'User already has this book saved'}
+
+
+def test_remove_book_from_user(client, user_with_book, token):
+    response = client.delete(
+        f'/users/me/books/{user_with_book.books[0].id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'message': 'Book successfully removed from user collection'
+    }
+
+
+def test_remove_book_from_user_should_return_404(
+    client, user_with_book, token
+):
+    response = client.delete(
+        '/users/me/books/300', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User does not have this book saved'}

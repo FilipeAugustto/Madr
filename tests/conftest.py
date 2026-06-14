@@ -128,6 +128,16 @@ def other_user(session):
 
 
 @pytest.fixture
+def user_with_book(user, book_with_author, session):
+    user.books.append(book_with_author)
+
+    session.add(user)
+    session.commit()
+
+    return user
+
+
+@pytest.fixture
 def author(session):
     AuthorFactory._meta.sqlalchemy_session = session
 
