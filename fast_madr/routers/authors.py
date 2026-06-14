@@ -96,7 +96,7 @@ def list_authors(
     query = select(Author)
 
     if author_filter.name:
-        query = query.filter(Author.name == author_filter.name)
+        query = query.filter(Author.name.contains(author_filter.name))
 
     if author_filter.birth_year:
         query = query.filter(Author.birth_year == author_filter.birth_year)
