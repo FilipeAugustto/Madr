@@ -60,7 +60,7 @@ def test_get_admin_user(client, token_admin, book_with_author):
     )
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'message': 'Book deleted'}
+    assert response.json() == {'message': 'Book deleted successfully'}
 
 
 def test_get_admin_user_with_common_user(client, token, book_with_author):

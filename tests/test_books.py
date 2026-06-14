@@ -92,7 +92,7 @@ def test_delete_book(client, book_with_author, token_admin):
     )
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'message': 'Book deleted'}
+    assert response.json() == {'message': 'Book deleted successfully'}
 
 
 def test_delete_book_should_return_404(client, token_admin):
