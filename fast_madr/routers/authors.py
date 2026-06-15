@@ -103,6 +103,20 @@ def list_authors(
 
     authors = session.scalars(
         query.offset(author_filter.offset).limit(author_filter.limit)
-    )
+    ).all()
 
-    return {'authors': authors.all()}
+    return {'authors': authors}
+
+
+@router.get(
+    '/{author_id}', response_model=AuthorPublic, status_code=HTTPStatus.OK
+)
+def get_author_by_id(
+    author_id: int, current_user: CurrentUser, session: O_Session
+):
+    db_author = session.scalar(select(Author).where(Author.id == author_id))
+
+    if not db_author:
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail=('Author not found'))
+
+    return db_author

@@ -118,6 +118,6 @@ def list_books(
 
     books = session.scalars(
         query.offset(book_filter.offset).limit(book_filter.limit)
-    )
+    ).all()
 
-    return {'books': books.all()}
+    return {'books': books}

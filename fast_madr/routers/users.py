@@ -1,14 +1,21 @@
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from fast_madr.database import get_session
 from fast_madr.models import Book, User
-from fast_madr.schemas import BookPublic, Message, UserPublic, UserSchema
+from fast_madr.schemas import (
+    BookPublic,
+    FilterBook,
+    ListBooks,
+    Message,
+    UserPublic,
+    UserSchema,
+)
 from fast_madr.security import get_current_user, get_password_hash
 
 router = APIRouter(prefix='/users', tags=['users'])
@@ -82,6 +89,12 @@ def delete_user(user_id: int, current_user: CurrentUser, session: O_Session):
     return {'message': 'User deleted successfully'}
 
 
+@router.get('/me', response_model=UserPublic, status_code=HTTPStatus.OK)
+def get_current_user_info(current_user: CurrentUser):
+
+    return current_user
+
+
 @router.post(
     '/me/books/{book_id}', response_model=BookPublic, status_code=HTTPStatus.OK
 )
@@ -128,3 +141,30 @@ def remove_book_from_user(
     session.commit()
 
     return {'message': 'Book successfully removed from user collection'}
+
+
+@router.get('/me/books', response_model=ListBooks, status_code=HTTPStatus.OK)
+def list_books_from_user(
+    book_filter: Annotated[FilterBook, Query()],
+    current_user: CurrentUser,
+    session: O_Session,
+):
+    query = select(Book).join(Book.users).where(User.id == current_user.id)
+
+    if book_filter.year:
+        query = query.filter(Book.year == book_filter.year)
+
+    if book_filter.min_year:
+        query = query.filter(Book.year >= book_filter.min_year)
+
+    if book_filter.max_year:
+        query = query.filter(Book.year <= book_filter.max_year)
+
+    if book_filter.title:
+        query = query.filter(Book.title.contains(book_filter.title))
+
+    books_from_user = session.scalars(
+        query.offset(book_filter.offset).limit(book_filter.limit)
+    ).all()
+
+    return {'books': books_from_user}
