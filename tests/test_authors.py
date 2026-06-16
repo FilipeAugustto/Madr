@@ -150,6 +150,8 @@ def test_list_authors_filter_birth_year_should_return_5_authors(
     client, prepare_factories, token
 ):
     AuthorFactory.create_batch(5, birth_year=1900)
+    AuthorFactory.create_batch(2, birth_year=1850)
+
     expected_authors = 5
     response = client.get(
         '/authors?birth_year=1900',

@@ -188,6 +188,8 @@ def test_list_books_filter_year_should_return_5_books(
     client, token, prepare_factories
 ):
     BookFactory.create_batch(5, year=1900)
+    BookFactory.create_batch(2, year=2000)
+
     expected_books = 5
     response = client.get(
         '/books?year=1900', headers={'Authorization': f'Bearer {token}'}
@@ -200,6 +202,8 @@ def test_list_books_filter_min_year_should_return_5_books(
     client, token, prepare_factories
 ):
     BookFactory.create_batch(5, year=1900)
+    BookFactory.create_batch(2, year=1700)
+
     expected_books = 5
     response = client.get(
         '/books?min_year=1800', headers={'Authorization': f'Bearer {token}'}
@@ -212,9 +216,11 @@ def test_list_books_filter_max_year_should_return_5_books(
     client, token, prepare_factories
 ):
     BookFactory.create_batch(5, year=1900)
+    BookFactory.create_batch(2, year=2010)
+
     expected_books = 5
     response = client.get(
-        '/books?max_year=2026', headers={'Authorization': f'Bearer {token}'}
+        '/books?max_year=2000', headers={'Authorization': f'Bearer {token}'}
     )
 
     assert len(response.json()['books']) == expected_books
