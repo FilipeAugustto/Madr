@@ -1,5 +1,5 @@
 [project]
-name = "fastapi-madr"
+name = "fast-madr"
 version = "0.1.0"
 description = "A project made for learning by Filipe"
 authors = [

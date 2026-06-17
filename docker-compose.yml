@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: fastmadr-postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/
+    environment:
+      POSTGRES_USER: guest_user
+      POSTGRES_DB: guest_db
+      POSTGRES_PASSWORD: guest
+    ports:
+      - "5432:5432"
+
+  app:
+    image: madr_app
+    container_name: fastmadr-app
+    entrypoint: ./entrypoint.sh
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql+psycopg://guest_user:guest@fastzero_database:5432/guest_db
+
+volumes:
+  pgdata:
