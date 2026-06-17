@@ -111,7 +111,7 @@ def test_patch_author_should_return_404(client, author, token):
 def test_list_authors_should_return_20_authors(
     client, prepare_factories, token
 ):
-    AuthorFactory.create_batch(20)
+    AuthorFactory.create_batch(21)
     expected_authors = 20
     response = client.get(
         '/authors', headers={'Authorization': f'Bearer {token}'}
@@ -169,3 +169,26 @@ def test_list_authors_should_return_correct_fields(client, author, token):
     assert response.json()['authors'] == [
         {'id': author.id, 'name': author.name, 'birth_year': author.birth_year}
     ]
+
+
+def test_get_author_by_id(client, author, token):
+    response = client.get(
+        f'/authors/{author.id}', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'id': author.id,
+        'name': author.name,
+        'birth_year': author.birth_year,
+    }
+
+
+def test_get_author_by_id_should_return_404(client, author, token):
+    response = client.get(
+        f'/authors/{author.id + 1}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'Author not found'}

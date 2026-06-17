@@ -162,7 +162,7 @@ def test_patch_book_with_inexistent_author(client, book_with_author, token):
 
 
 def test_list_books_should_return_20_books(client, token):
-    BookFactory.create_batch(20)
+    BookFactory.create_batch(21)
     expected_books = 20
     response = client.get(
         '/books', headers={'Authorization': f'Bearer {token}'}

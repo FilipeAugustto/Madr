@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+from tests.factories import BookFactory
+
 
 def test_create_user(client):
     response = client.post(
@@ -101,6 +103,19 @@ def test_delete_user_should_return_403(client, user, token):
     assert response.json() == {'detail': 'Unauthorized user'}
 
 
+def test_get_current_user_info(client, user, token):
+    response = client.get(
+        '/users/me', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+    }
+
+
 def test_add_book_to_user(client, book_with_author, token):
     response = client.post(
         f'/users/me/books/{book_with_author.id}',
@@ -162,3 +177,139 @@ def test_remove_book_from_user_should_return_404(
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User does not have this book saved'}
+
+
+def test_list_book_from_users_should_return_20_books(
+    client, user, prepare_factories, token, session
+):
+    books = BookFactory.create_batch(21)
+
+    user.books.extend(books)
+    session.add(user)
+    session.commit()
+
+    expected_books = 20
+    response = client.get(
+        '/users/me/books', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert len(response.json()['books']) == expected_books
+
+
+def test_list_book_from_users_filter_pagination_should_return_10_books(
+    client, user, prepare_factories, token, session
+):
+    books = BookFactory.create_batch(20)
+
+    user.books.extend(books)
+    session.add(user)
+    session.commit()
+
+    expected_books = 10
+    response = client.get(
+        '/users/me/books?limit=10&offset=5',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert len(response.json()['books']) == expected_books
+
+
+def test_list_book_from_users_filter_year_should_return_5_books(
+    client, user, prepare_factories, token, session
+):
+    books_to_return = BookFactory.create_batch(5, year=1900)
+    books_to_ignore = BookFactory.create_batch(2, year=2000)
+
+    user.books.extend(books_to_ignore)
+    user.books.extend(books_to_return)
+
+    session.add(user)
+    session.commit()
+
+    expected_books = 5
+    response = client.get(
+        '/users/me/books?year=1900',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert len(response.json()['books']) == expected_books
+
+
+def test_list_book_from_users_filter_min_year_should_return_5_books(
+    client, user, prepare_factories, token, session
+):
+    books_to_return = BookFactory.create_batch(5, year=1800)
+    books_to_ignore = BookFactory.create_batch(2, year=1700)
+
+    user.books.extend(books_to_ignore)
+    user.books.extend(books_to_return)
+
+    session.add(user)
+    session.commit()
+
+    expected_books = 5
+    response = client.get(
+        '/users/me/books?min_year=1800',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert len(response.json()['books']) == expected_books
+
+
+def test_list_book_from_users_filter_max_year_should_return_5_books(
+    client, user, prepare_factories, token, session
+):
+    books_to_return = BookFactory.create_batch(5, year=1800)
+    books_to_ignore = BookFactory.create_batch(2, year=2000)
+
+    user.books.extend(books_to_ignore)
+    user.books.extend(books_to_return)
+
+    session.add(user)
+    session.commit()
+
+    expected_books = 5
+    response = client.get(
+        '/users/me/books?max_year=1900',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert len(response.json()['books']) == expected_books
+
+
+def test_list_book_from_users_filter_title_should_return_1_book(
+    client, user, prepare_factories, token, session
+):
+    books_to_ignore = BookFactory.create_batch(5)
+    book_to_return = BookFactory.create(title='best test title')
+
+    user.books.extend(books_to_ignore)
+    user.books.append(book_to_return)
+
+    session.add(user)
+    session.commit()
+
+    expected_books = 1
+    response = client.get(
+        '/users/me/books?title=best test title',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert len(response.json()['books']) == expected_books
+
+
+def test_list_books_return_expected_fields(client, user_with_book, token):
+    response = client.get(
+        '/users/me/books', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    book_from_user = user_with_book.books[0]
+
+    assert response.json()['books'] == [
+        {
+            'id': book_from_user.id,
+            'year': book_from_user.year,
+            'title': book_from_user.title,
+            'author_id': book_from_user.author_id,
+        }
+    ]
