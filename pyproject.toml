@@ -56,5 +56,3 @@ run = 'fastapi dev fast_madr/app.py'
 pre_test = 'task lint'
 test = 'pytest -s -x --cov=fast_madr -vv'
 post_test = 'coverage html'
-
-
