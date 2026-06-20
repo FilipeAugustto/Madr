@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 
-from fast_madr.routers import auth, authors, books, users
+from fast_madr.routers import auth, authors, books, monitoring, users
 
 app = FastAPI()
 app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(books.router)
 app.include_router(authors.router)
+app.include_router(monitoring.router)
 
 
 @app.get('/')

@@ -46,6 +46,23 @@ def session(engine):
     table_registry.metadata.drop_all(engine)
 
 
+@pytest.fixture
+def mock_session_with_error():
+    class FakeSession:
+        @staticmethod
+        def execute():
+            raise Exception('error with connection')
+
+    def override():
+        return FakeSession()
+
+    app.dependency_overrides[get_session] = override
+
+    yield
+
+    app.dependency_overrides.clear()
+
+
 @contextmanager
 def _mock_db_time(*, model, time=datetime(2026, 6, 1)):
     def fake_time_hook(mapper, connection, target):
