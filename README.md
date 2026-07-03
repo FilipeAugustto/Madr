@@ -9,6 +9,12 @@
 
 - [🚀 Visão Geral](#-visão-geral)
 - [🔧 Stack de Tecnologias](#-stack-de-tecnologias)
+- [📁 Estrutura do Projeto](#-estrutura-do-projeto)
+- [🌐 Rotas da API](#-rotas-da-api)
+  - [👤 Usuários (/users)](#-usuários-users)
+  - [🔐 Autenticação (/auth)](#-autenticação-auth)
+  - [📚 Livros (/books)](#-livros-books)
+  - [✍️ Autores (/authors)](#️-autores-authors)
 - [🖥️ Como Rodar a Aplicação](#️-como-rodar-a-aplicação)
   - [Pré-requisitos](#pré-requisitos)
   - [Subir todos os containers com Docker Compose](#subir-todos-os-containers-com-docker-compose)
