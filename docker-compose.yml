@@ -10,6 +10,11 @@ services:
       POSTGRES_PASSWORD: guest
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guest_user -d guest_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   app:
     image: madr_app
@@ -19,9 +24,19 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg://guest_user:guest@fastzero_database:5432/guest_db
+      DATABASE_URL: postgresql+psycopg://guest_user:guest@postgres:5432/guest_db
+      SECRET_KEY: guestsecretkey
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 volumes:
   pgdata:
