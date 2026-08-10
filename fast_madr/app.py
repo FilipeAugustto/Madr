@@ -11,5 +11,5 @@ app.include_router(monitoring.router)
 
 
 @app.get('/')
-def read_root():
+async def read_root():
     return {'Olá mundo': 'Hello world'}

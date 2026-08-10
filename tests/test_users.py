@@ -1,6 +1,8 @@
 from http import HTTPStatus
 
-from tests.factories import BookFactory
+import pytest
+
+from tests.conftest import create_book_batch
 
 
 def test_create_user(client):
@@ -179,14 +181,15 @@ def test_remove_book_from_user_should_return_404(
     assert response.json() == {'detail': 'User does not have this book saved'}
 
 
-def test_list_book_from_users_should_return_20_books(
-    client, user, prepare_factories, token, session
+@pytest.mark.asyncio
+async def test_list_book_from_users_should_return_20_books(
+    client, user, token, session
 ):
-    books = BookFactory.create_batch(21)
+    books = await create_book_batch(session=session, size=21)
 
     user.books.extend(books)
     session.add(user)
-    session.commit()
+    await session.commit()
 
     expected_books = 20
     response = client.get(
@@ -196,14 +199,15 @@ def test_list_book_from_users_should_return_20_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_book_from_users_filter_pagination_should_return_10_books(
-    client, user, prepare_factories, token, session
+@pytest.mark.asyncio
+async def test_list_book_from_users_filter_pagination_should_return_10_books(
+    client, user, token, session
 ):
-    books = BookFactory.create_batch(20)
+    books = await create_book_batch(session=session, size=20)
 
     user.books.extend(books)
     session.add(user)
-    session.commit()
+    await session.commit()
 
     expected_books = 10
     response = client.get(
@@ -214,17 +218,22 @@ def test_list_book_from_users_filter_pagination_should_return_10_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_book_from_users_filter_year_should_return_5_books(
-    client, user, prepare_factories, token, session
+@pytest.mark.asyncio
+async def test_list_book_from_users_filter_year_should_return_5_books(
+    client, user, token, session
 ):
-    books_to_return = BookFactory.create_batch(5, year=1900)
-    books_to_ignore = BookFactory.create_batch(2, year=2000)
+    books_to_return = await create_book_batch(
+        session=session, size=5, year=1900
+    )
+    books_to_ignore = await create_book_batch(
+        session=session, size=2, year=2000
+    )
 
     user.books.extend(books_to_ignore)
     user.books.extend(books_to_return)
 
     session.add(user)
-    session.commit()
+    await session.commit()
 
     expected_books = 5
     response = client.get(
@@ -235,17 +244,22 @@ def test_list_book_from_users_filter_year_should_return_5_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_book_from_users_filter_min_year_should_return_5_books(
-    client, user, prepare_factories, token, session
+@pytest.mark.asyncio
+async def test_list_book_from_users_filter_min_year_should_return_5_books(
+    client, user, token, session
 ):
-    books_to_return = BookFactory.create_batch(5, year=1800)
-    books_to_ignore = BookFactory.create_batch(2, year=1700)
+    books_to_return = await create_book_batch(
+        session=session, size=5, year=1800
+    )
+    books_to_ignore = await create_book_batch(
+        session=session, size=2, year=1700
+    )
 
     user.books.extend(books_to_ignore)
     user.books.extend(books_to_return)
 
     session.add(user)
-    session.commit()
+    await session.commit()
 
     expected_books = 5
     response = client.get(
@@ -256,17 +270,22 @@ def test_list_book_from_users_filter_min_year_should_return_5_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_book_from_users_filter_max_year_should_return_5_books(
-    client, user, prepare_factories, token, session
+@pytest.mark.asyncio
+async def test_list_book_from_users_filter_max_year_should_return_5_books(
+    client, user, token, session
 ):
-    books_to_return = BookFactory.create_batch(5, year=1800)
-    books_to_ignore = BookFactory.create_batch(2, year=2000)
+    books_to_return = await create_book_batch(
+        session=session, size=5, year=1800
+    )
+    books_to_ignore = await create_book_batch(
+        session=session, size=2, year=2000
+    )
 
     user.books.extend(books_to_ignore)
     user.books.extend(books_to_return)
 
     session.add(user)
-    session.commit()
+    await session.commit()
 
     expected_books = 5
     response = client.get(
@@ -277,17 +296,20 @@ def test_list_book_from_users_filter_max_year_should_return_5_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_book_from_users_filter_title_should_return_1_book(
-    client, user, prepare_factories, token, session
+@pytest.mark.asyncio
+async def test_list_book_from_users_filter_title_should_return_1_book(
+    client, user, token, session
 ):
-    books_to_ignore = BookFactory.create_batch(5)
-    book_to_return = BookFactory.create(title='best test title')
+    book_to_return = await create_book_batch(
+        session=session, title='best test title'
+    )
+    books_to_ignore = await create_book_batch(session=session, size=5)
 
     user.books.extend(books_to_ignore)
-    user.books.append(book_to_return)
+    user.books.extend(book_to_return)
 
     session.add(user)
-    session.commit()
+    await session.commit()
 
     expected_books = 1
     response = client.get(

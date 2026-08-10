@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+import pytest
+
 from tests.factories import AuthorFactory
 
 
@@ -108,10 +110,11 @@ def test_patch_author_should_return_404(client, author, token):
     assert response.json() == {'detail': 'Author not found'}
 
 
-def test_list_authors_should_return_20_authors(
-    client, prepare_factories, token
-):
-    AuthorFactory.create_batch(21)
+@pytest.mark.asyncio
+async def test_list_authors_should_return_20_authors(client, session, token):
+    session.add_all(AuthorFactory.create_batch(21))
+    await session.commit()
+
     expected_authors = 20
     response = client.get(
         '/authors', headers={'Authorization': f'Bearer {token}'}
@@ -120,10 +123,13 @@ def test_list_authors_should_return_20_authors(
     assert len(response.json()['authors']) == expected_authors
 
 
-def test_list_authors_filter_pagination_should_return_5_authors(
-    client, prepare_factories, token
+@pytest.mark.asyncio
+async def test_list_authors_filter_pagination_should_return_5_authors(
+    client, session, token
 ):
-    AuthorFactory.create_batch(20)
+    session.add_all(AuthorFactory.create_batch(20))
+    await session.commit()
+
     expected_authors = 5
     response = client.get(
         '/authors?limit=5&offset=3',
@@ -133,11 +139,14 @@ def test_list_authors_filter_pagination_should_return_5_authors(
     assert len(response.json()['authors']) == expected_authors
 
 
-def test_list_authors_filter_name_should_return_2_authors(
-    client, prepare_factories, token
+@pytest.mark.asyncio
+async def test_list_authors_filter_name_should_return_2_authors(
+    client, session, token
 ):
-    AuthorFactory.create_batch(3)
-    AuthorFactory.create_batch(2, name='test name')
+    session.add_all(AuthorFactory.create_batch(3))
+    session.add_all(AuthorFactory.create_batch(2, name='test name'))
+    await session.commit()
+
     expected_authors = 2
     response = client.get(
         '/authors?name=test name', headers={'Authorization': f'Bearer {token}'}
@@ -146,11 +155,13 @@ def test_list_authors_filter_name_should_return_2_authors(
     assert len(response.json()['authors']) == expected_authors
 
 
-def test_list_authors_filter_birth_year_should_return_5_authors(
-    client, prepare_factories, token
+@pytest.mark.asyncio
+async def test_list_authors_filter_birth_year_should_return_5_authors(
+    client, session, token
 ):
-    AuthorFactory.create_batch(5, birth_year=1900)
-    AuthorFactory.create_batch(2, birth_year=1850)
+    session.add_all(AuthorFactory.create_batch(5, birth_year=1900))
+    session.add_all(AuthorFactory.create_batch(2, birth_year=1850))
+    await session.commit()
 
     expected_authors = 5
     response = client.get(

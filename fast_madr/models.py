@@ -43,6 +43,7 @@ class User:
         init=False,
         back_populates='users',
         passive_deletes=True,
+        lazy='selectin',
     )
 
 
@@ -54,12 +55,15 @@ class Book:
     year: Mapped[int]
     title: Mapped[str] = mapped_column(unique=True)
     author_id: Mapped[int] = mapped_column(ForeignKey('authors.id'))
-    author: Mapped['Author'] = relationship(init=False, back_populates='books')
+    author: Mapped['Author'] = relationship(
+        init=False, back_populates='books', lazy='selectin'
+    )
     users: Mapped[list[User]] = relationship(
         secondary=user_book_association,
         init=False,
         back_populates='books',
         passive_deletes=True,
+        lazy='selectin',
     )
 
 
@@ -71,5 +75,8 @@ class Author:
     name: Mapped[str]
     birth_year: Mapped[int]
     books: Mapped[list['Book']] = relationship(
-        init=False, back_populates='author', cascade='all, delete-orphan'
+        init=False,
+        back_populates='author',
+        cascade='all, delete-orphan',
+        lazy='selectin',
     )

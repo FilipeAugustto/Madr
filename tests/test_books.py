@@ -1,6 +1,8 @@
 from http import HTTPStatus
 
-from tests.factories import BookFactory
+import pytest
+
+from tests.conftest import create_book_batch
 
 
 def test_create_book(client, author, token):
@@ -161,8 +163,10 @@ def test_patch_book_with_inexistent_author(client, book_with_author, token):
     }
 
 
-def test_list_books_should_return_20_books(client, token):
-    BookFactory.create_batch(21)
+@pytest.mark.asyncio
+async def test_list_books_should_return_20_books(client, session, token):
+    await create_book_batch(session=session, size=21)
+
     expected_books = 20
     response = client.get(
         '/books', headers={'Authorization': f'Bearer {token}'}
@@ -171,10 +175,12 @@ def test_list_books_should_return_20_books(client, token):
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_books_filter_pagination_should_return_5_books(
-    client, token, prepare_factories
+@pytest.mark.asyncio
+async def test_list_books_filter_pagination_should_return_5_books(
+    client, session, token
 ):
-    BookFactory.create_batch(20)
+    await create_book_batch(session=session, size=20)
+
     expected_books = 5
     response = client.get(
         '/books?limit=5&offset=10',
@@ -184,11 +190,12 @@ def test_list_books_filter_pagination_should_return_5_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_books_filter_year_should_return_5_books(
-    client, token, prepare_factories
+@pytest.mark.asyncio
+async def test_list_books_filter_year_should_return_5_books(
+    client, session, token
 ):
-    BookFactory.create_batch(5, year=1900)
-    BookFactory.create_batch(2, year=2000)
+    await create_book_batch(session=session, size=5, year=1900)
+    await create_book_batch(session=session, size=2, year=2000)
 
     expected_books = 5
     response = client.get(
@@ -198,11 +205,12 @@ def test_list_books_filter_year_should_return_5_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_books_filter_min_year_should_return_5_books(
-    client, token, prepare_factories
+@pytest.mark.asyncio
+async def test_list_books_filter_min_year_should_return_5_books(
+    client, session, token
 ):
-    BookFactory.create_batch(5, year=1900)
-    BookFactory.create_batch(2, year=1700)
+    await create_book_batch(session=session, size=5, year=1900)
+    await create_book_batch(session=session, size=2, year=1700)
 
     expected_books = 5
     response = client.get(
@@ -212,11 +220,12 @@ def test_list_books_filter_min_year_should_return_5_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_books_filter_max_year_should_return_5_books(
-    client, token, prepare_factories
+@pytest.mark.asyncio
+async def test_list_books_filter_max_year_should_return_5_books(
+    client, session, token
 ):
-    BookFactory.create_batch(5, year=1900)
-    BookFactory.create_batch(2, year=2010)
+    await create_book_batch(session=session, size=5, year=1900)
+    await create_book_batch(session=session, size=2, year=2010)
 
     expected_books = 5
     response = client.get(
@@ -226,11 +235,13 @@ def test_list_books_filter_max_year_should_return_5_books(
     assert len(response.json()['books']) == expected_books
 
 
-def test_list_books_filter_title_should_return_1_book(
-    client, token, prepare_factories
+@pytest.mark.asyncio
+async def test_list_books_filter_title_should_return_1_book(
+    client, session, token
 ):
-    BookFactory.create_batch(5)
-    BookFactory.create(title='mega test title')
+    await create_book_batch(session=session, size=5)
+    await create_book_batch(session=session, title='mega test title')
+
     expected_books = 1
     response = client.get(
         '/books?title=test', headers={'Authorization': f'Bearer {token}'}

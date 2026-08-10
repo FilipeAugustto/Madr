@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_madr.database import get_session
 from fast_madr.models import Book, User
@@ -19,13 +19,13 @@ from fast_madr.schemas import (
 from fast_madr.security import get_current_user, get_password_hash
 
 router = APIRouter(prefix='/users', tags=['users'])
-O_Session = Annotated[Session, Depends(get_session)]
+O_Session = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.post('', response_model=UserPublic, status_code=HTTPStatus.CREATED)
-def create_user(user: UserSchema, session: O_Session):
-    db_user = session.scalar(
+async def create_user(user: UserSchema, session: O_Session):
+    db_user = await session.scalar(
         select(User).where(
             (User.username == user.username) | (User.email == user.email)
         )
@@ -42,14 +42,14 @@ def create_user(user: UserSchema, session: O_Session):
     )
 
     session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    await session.commit()
+    await session.refresh(db_user)
 
     return db_user
 
 
 @router.put('/{user_id}', response_model=UserPublic, status_code=HTTPStatus.OK)
-def update_user(
+async def update_user(
     user_id: int,
     user: UserSchema,
     current_user: CurrentUser,
@@ -64,7 +64,7 @@ def update_user(
 
     try:
         session.add(current_user)
-        session.commit()
+        await session.commit()
 
     except IntegrityError:
         raise HTTPException(
@@ -75,22 +75,24 @@ def update_user(
 
 
 @router.delete('/{user_id}', response_model=Message, status_code=HTTPStatus.OK)
-def delete_user(user_id: int, current_user: CurrentUser, session: O_Session):
+async def delete_user(
+    user_id: int, current_user: CurrentUser, session: O_Session
+):
     if user_id != current_user.id:
         raise HTTPException(HTTPStatus.FORBIDDEN, detail='Unauthorized user')
 
-    user = session.scalar(select(User).where(User.id == current_user.id))
+    user = await session.scalar(select(User).where(User.id == current_user.id))
 
     user.is_active = False
 
     session.add(user)
-    session.commit()
+    await session.commit()
 
     return {'message': 'User deleted successfully'}
 
 
 @router.get('/me', response_model=UserPublic, status_code=HTTPStatus.OK)
-def get_current_user_info(current_user: CurrentUser):
+async def get_current_user_info(current_user: CurrentUser):
 
     return current_user
 
@@ -98,24 +100,23 @@ def get_current_user_info(current_user: CurrentUser):
 @router.post(
     '/me/books/{book_id}', response_model=BookPublic, status_code=HTTPStatus.OK
 )
-def add_book_to_user(
+async def add_book_to_user(
     book_id: int, current_user: CurrentUser, session: O_Session
 ):
-    db_book = session.scalar(select(Book).where(Book.id == book_id))
+    db_book = await session.scalar(select(Book).where(Book.id == book_id))
 
     if not db_book:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Book not found')
 
-    try:
-        current_user.books.append(db_book)
-
-        session.add(current_user)
-        session.commit()
-
-    except IntegrityError:
+    if db_book in current_user.books:
         raise HTTPException(
             HTTPStatus.CONFLICT, detail='User already has this book saved'
         )
+
+    current_user.books.append(db_book)
+
+    session.add(current_user)
+    await session.commit()
 
     return db_book
 
@@ -123,10 +124,10 @@ def add_book_to_user(
 @router.delete(
     '/me/books/{book_id}', response_model=Message, status_code=HTTPStatus.OK
 )
-def remove_book_from_user(
+async def remove_book_from_user(
     book_id: int, current_user: CurrentUser, session: O_Session
 ):
-    user_saved_book = session.scalar(
+    user_saved_book = await session.scalar(
         select(Book)
         .join(Book.users)
         .where((User.id == current_user.id) & (Book.id == book_id))
@@ -138,13 +139,13 @@ def remove_book_from_user(
         )
 
     current_user.books.remove(user_saved_book)
-    session.commit()
+    await session.commit()
 
     return {'message': 'Book successfully removed from user collection'}
 
 
 @router.get('/me/books', response_model=ListBooks, status_code=HTTPStatus.OK)
-def list_books_from_user(
+async def list_books_from_user(
     book_filter: Annotated[FilterBook, Query()],
     current_user: CurrentUser,
     session: O_Session,
@@ -163,8 +164,8 @@ def list_books_from_user(
     if book_filter.title:
         query = query.filter(Book.title.contains(book_filter.title))
 
-    books_from_user = session.scalars(
+    books_from_user = await session.scalars(
         query.offset(book_filter.offset).limit(book_filter.limit)
-    ).all()
+    )
 
-    return {'books': books_from_user}
+    return {'books': books_from_user.all()}

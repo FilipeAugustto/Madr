@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_madr.database import get_session
 from fast_madr.models import User
@@ -18,13 +18,13 @@ from fast_madr.security import (
 router = APIRouter(prefix='/auth', tags=['auth'])
 
 Formdata = Annotated[OAuth2PasswordRequestForm, Depends()]
-O_Session = Annotated[Session, Depends(get_session)]
+O_Session = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.post('/token', response_model=Token, status_code=HTTPStatus.OK)
-def login_for_access_token(session: O_Session, form_data: Formdata):
-    user = session.scalar(
+async def login_for_access_token(session: O_Session, form_data: Formdata):
+    user = await session.scalar(
         select(User).where(
             (User.email == form_data.username) & (User.is_active)
         )
@@ -42,7 +42,7 @@ def login_for_access_token(session: O_Session, form_data: Formdata):
 
 
 @router.post('/refresh-token', response_model=Token, status_code=HTTPStatus.OK)
-def refresh_token(current_user: CurrentUser):
+async def refresh_token(current_user: CurrentUser):
     new_access_token = create_access_token({'sub': current_user.email})
 
     return Token(access_token=new_access_token, token_type='Bearer')

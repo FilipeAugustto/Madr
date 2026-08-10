@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_madr.database import get_session
 
@@ -11,9 +11,9 @@ router = APIRouter(tags=['monitoring'])
 
 
 @router.get('/health', status_code=HTTPStatus.OK)
-def health_check(session: Annotated[Session, Depends(get_session)]):
+async def health_check(session: Annotated[AsyncSession, Depends(get_session)]):
     try:
-        session.execute(text('SELECT 1'))
+        await session.execute(text('SELECT 1'))
 
         return {'status': 'online', 'database': 'connected'}
 

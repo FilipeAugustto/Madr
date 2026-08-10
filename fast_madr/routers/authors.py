@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_madr.database import get_session
 from fast_madr.models import Author, User
@@ -18,16 +18,16 @@ from fast_madr.schemas import (
 from fast_madr.security import get_admin_user, get_current_user
 
 router = APIRouter(prefix='/authors', tags=['authors'])
-O_Session = Annotated[Session, Depends(get_session)]
+O_Session = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(get_admin_user)]
 
 
 @router.post('', response_model=AuthorPublic, status_code=HTTPStatus.CREATED)
-def create_author(
+async def create_author(
     author: AuthorSchema, current_user: CurrentUser, session: O_Session
 ):
-    db_author = session.scalar(
+    db_author = await session.scalar(
         select(Author).where(
             (Author.name == author.name)
             & (Author.birth_year == author.birth_year)
@@ -42,8 +42,8 @@ def create_author(
     db_author = Author(name=author.name, birth_year=author.birth_year)
 
     session.add(db_author)
-    session.commit()
-    session.refresh(db_author)
+    await session.commit()
+    await session.refresh(db_author)
 
     return db_author
 
@@ -51,14 +51,18 @@ def create_author(
 @router.delete(
     '/{author_id}', response_model=Message, status_code=HTTPStatus.OK
 )
-def delete_author(author_id: int, admin_user: AdminUser, session: O_Session):
-    db_author = session.scalar(select(Author).where(Author.id == author_id))
+async def delete_author(
+    author_id: int, admin_user: AdminUser, session: O_Session
+):
+    db_author = await session.scalar(
+        select(Author).where(Author.id == author_id)
+    )
 
     if not db_author:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Author not found')
 
-    session.delete(db_author)
-    session.commit()
+    await session.delete(db_author)
+    await session.commit()
 
     return {'message': 'Author deleted successfully'}
 
@@ -66,13 +70,15 @@ def delete_author(author_id: int, admin_user: AdminUser, session: O_Session):
 @router.patch(
     '/{author_id}', response_model=AuthorPublic, status_code=HTTPStatus.OK
 )
-def patch_author(
+async def patch_author(
     author_id: int,
     author: AuthorUpdate,
     current_user: CurrentUser,
     session: O_Session,
 ):
-    db_author = session.scalar(select(Author).where(Author.id == author_id))
+    db_author = await session.scalar(
+        select(Author).where(Author.id == author_id)
+    )
 
     if not db_author:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Author not found')
@@ -81,14 +87,14 @@ def patch_author(
         setattr(db_author, key, value)
 
     session.add(db_author)
-    session.commit()
-    session.refresh(db_author)
+    await session.commit()
+    await session.refresh(db_author)
 
     return db_author
 
 
 @router.get('', response_model=ListAuthors, status_code=HTTPStatus.OK)
-def list_authors(
+async def list_authors(
     author_filter: Annotated[FilterAuthor, Query()],
     current_user: CurrentUser,
     session: O_Session,
@@ -101,20 +107,22 @@ def list_authors(
     if author_filter.birth_year:
         query = query.filter(Author.birth_year == author_filter.birth_year)
 
-    authors = session.scalars(
+    authors = await session.scalars(
         query.offset(author_filter.offset).limit(author_filter.limit)
-    ).all()
+    )
 
-    return {'authors': authors}
+    return {'authors': authors.all()}
 
 
 @router.get(
     '/{author_id}', response_model=AuthorPublic, status_code=HTTPStatus.OK
 )
-def get_author_by_id(
+async def get_author_by_id(
     author_id: int, current_user: CurrentUser, session: O_Session
 ):
-    db_author = session.scalar(select(Author).where(Author.id == author_id))
+    db_author = await session.scalar(
+        select(Author).where(Author.id == author_id)
+    )
 
     if not db_author:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail=('Author not found'))

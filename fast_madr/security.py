@@ -42,7 +42,7 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-def get_current_user(
+async def get_current_user(
     session: Annotated[Session, Depends(get_session)],
     token: Annotated[str, Depends(oauth2_scheme)],
 ):
@@ -64,7 +64,7 @@ def get_current_user(
     except InvalidTokenError:
         raise credentials_exception
 
-    user = session.scalar(
+    user = await session.scalar(
         select(User).where(
             (User.email == token_data.username) & (User.is_active)
         )

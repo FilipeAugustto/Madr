@@ -1,10 +1,13 @@
+import asyncio
+import sys
 from contextlib import contextmanager
 from datetime import datetime
 
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import Session
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from testcontainers.postgres import PostgresContainer
 
 from fast_madr.app import app
@@ -12,6 +15,9 @@ from fast_madr.database import get_session
 from fast_madr.models import table_registry
 from fast_madr.security import get_password_hash
 from tests.factories import AuthorFactory, BookFactory, UserFactory
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 @pytest.fixture
@@ -29,21 +35,19 @@ def client(session):
 @pytest.fixture(scope='session')
 def engine():
     with PostgresContainer('postgres:17-alpine', driver='psycopg') as postgres:
-        _engine = create_engine(postgres.get_connection_url())
-
-        with _engine.begin():
-            yield _engine
+        yield create_async_engine(postgres.get_connection_url())
 
 
-@pytest.fixture
-def session(engine):
-    table_registry.metadata.create_all(engine)
+@pytest_asyncio.fixture
+async def session(engine):
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.create_all)
 
-    with Session(engine) as session:
+    async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
-        session.rollback()
 
-    table_registry.metadata.drop_all(engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.drop_all)
 
 
 @pytest.fixture
@@ -84,101 +88,114 @@ def mock_db_time():
     return _mock_db_time
 
 
-@pytest.fixture
-def user(session):
+@pytest_asyncio.fixture
+async def user(session):
     password = 'test'
     user = UserFactory(password=get_password_hash(password))
 
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
 
     user.clean_password = 'test'
 
     return user
 
 
-@pytest.fixture
-def admin_user(session):
+@pytest_asyncio.fixture
+async def admin_user(session):
     password = 'test'
     admin_user = UserFactory(
         password=get_password_hash(password), is_admin=True
     )
 
     session.add(admin_user)
-    session.commit()
-    session.refresh(admin_user)
+    await session.commit()
+    await session.refresh(admin_user)
 
     admin_user.clean_password = 'test'
 
     return admin_user
 
 
-@pytest.fixture
-def inactive_user(session):
+@pytest_asyncio.fixture
+async def inactive_user(session):
     password = 'test'
     inactive_user = UserFactory(
         password=get_password_hash(password), is_active=False
     )
 
     session.add(inactive_user)
-    session.commit()
-    session.refresh(inactive_user)
+    await session.commit()
+    await session.refresh(inactive_user)
 
     inactive_user.clean_password = 'test'
 
     return inactive_user
 
 
-@pytest.fixture
-def other_user(session):
+@pytest_asyncio.fixture
+async def other_user(session):
     password = 'test'
     user = UserFactory(password=get_password_hash(password))
 
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
 
     user.clean_password = 'test'
 
     return user
 
 
-@pytest.fixture
-def user_with_book(user, book_with_author, session):
+@pytest_asyncio.fixture
+async def user_with_book(user, book_with_author, session):
     user.books.append(book_with_author)
 
     session.add(user)
-    session.commit()
+    await session.commit()
 
     return user
 
 
-@pytest.fixture
-def author(session):
-    AuthorFactory._meta.sqlalchemy_session = session
-
-    author = AuthorFactory()
-    session.refresh(author)
+@pytest_asyncio.fixture
+async def author(session):
+    author = AuthorFactory.build()
+    session.add(author)
+    await session.commit()
+    await session.refresh(author)
 
     return author
 
 
-@pytest.fixture
-def book_with_author(session):
-    AuthorFactory._meta.sqlalchemy_session = session
-    BookFactory._meta.sqlalchemy_session = session
-
-    book = BookFactory()
-    session.refresh(book)
+@pytest_asyncio.fixture
+async def book_with_author(session, author):
+    book = BookFactory.build(author_id=author.id)
+    session.add(book)
+    await session.commit()
+    await session.refresh(book)
 
     return book
 
 
-@pytest.fixture
-def prepare_factories(session):
-    AuthorFactory._meta.sqlalchemy_session = session
-    BookFactory._meta.sqlalchemy_session = session
+async def create_book_batch(session, size: int = 1, **kwargs):
+    books = []
+
+    for _ in range(size):
+        author = AuthorFactory.build()
+        session.add(author)
+        await session.flush()
+
+        book = BookFactory.build(author_id=author.id, **kwargs)
+        session.add(book)
+        books.append(book)
+
+    await session.commit()
+
+    for book in books:
+        await session.refresh(book)
+
+    return books
 
 
 @pytest.fixture

@@ -1,3 +1,6 @@
+import asyncio
+import sys
+
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -24,6 +27,9 @@ target_metadata = table_registry.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 def run_migrations_offline() -> None:
